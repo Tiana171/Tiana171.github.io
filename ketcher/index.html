@@ -1,1 +1,41 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Ketcher is a web-based chemical structure editor"/><link rel="shortcut icon" type="image/x-icon" href="./favicon.ico"/><link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png"/><link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png"/><link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png"/><link rel="manifest" href="./manifest.json"/><title>Ketcher v3.18.0</title><script defer="defer" src="./static/js/main.e47c48ad.js"></script><link href="./static/css/main.96b87be0.css" rel="stylesheet"></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Ketcher is a web-based chemical structure editor"/><link rel="shortcut icon" type="image/x-icon" href="./favicon.ico"/><link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png"/><link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png"/><link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png"/><link rel="manifest" href="./manifest.json"/><title>Ketcher v3.18.0</title><script defer="defer" src="./static/js/main.e47c48ad.js"></script><link href="./static/css/main.96b87be0.css" rel="stylesheet"></head><!-- REELUM bridge: вставить в index.html Ketcher на GitHub прямо перед </body> -->
+<script>
+(function () {
+  function allowed(origin) {
+    try { return /\.googleusercontent\.com$/.test(new URL(origin).hostname); } catch (e) { return false; }
+  }
+  function blobToDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  }
+  window.addEventListener('message', async function (e) {
+    if (!e.data || !e.data.type || !allowed(e.origin)) return;
+    var reply = function (msg) { e.source.postMessage(msg, e.origin); };
+    var k = window.ketcher;
+    if (!k) { reply({ type: 'REELUM_ERROR', error: 'Ketcher ещё загружается, подождите пару секунд' }); return; }
+    try {
+      if (e.data.type === 'REELUM_EXPORT') {
+        var mol = await k.getMolfile();
+        var smiles = '';
+        try { smiles = await k.getSmiles(); } catch (x) {}
+        var cdxml = '';
+        try { if (k.getCDXml) cdxml = await k.getCDXml(); } catch (x) {}
+        var cdx = '';
+        try { if (k.getCDX) cdx = await k.getCDX(); } catch (x) {}
+        var png = '';
+        if (smiles) png = await blobToDataUrl(await k.generateImage(mol, { outputFormat: 'png' }));
+        reply({ type: 'REELUM_EXPORT_RESULT', mol: mol, smiles: smiles, cdxml: cdxml, cdx: cdx, png: png });
+      } else if (e.data.type === 'REELUM_LOAD') {
+        await k.setMolecule(e.data.mol || '');
+        reply({ type: 'REELUM_LOADED' });
+      }
+    } catch (err) {
+      reply({ type: 'REELUM_ERROR', error: String((err && err.message) || err) });
+    }
+  });
+})();
+</script><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>
