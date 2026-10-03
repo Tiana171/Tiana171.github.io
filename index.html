@@ -3,53 +3,85 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <title>Тестовые карточки лабораторных образцов</title>
 
   <style>
     body {
-      max-width: 760px;
+      max-width: 860px;
       margin: 40px auto;
       padding: 0 20px;
       color: #1d2329;
       font-family: Arial, Helvetica, sans-serif;
       line-height: 1.6;
+      background: #f7f9fc;
     }
 
-    h1 {
+    h1, h2 {
       color: #17365d;
     }
 
     a {
       color: #0b5cad;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
     }
 
     .warning {
-      padding: 14px;
+      padding: 14px 16px;
       background: #fff8dc;
       border-left: 4px solid #d79e00;
+      border-radius: 6px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #d8e0ea;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin: 18px 0;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    .muted {
+      color: #5a6673;
+      font-size: 0.95rem;
     }
   </style>
 </head>
-
 <body>
   <h1>Тестовые QR-карточки химических образцов</h1>
 
   <p>
-    Этот сайт создан для проверки маркировки лабораторных образцов
-    QR-кодами.
+    Этот сайт используется как публичная тестовая витрина карточек лабораторных образцов.
   </p>
 
   <p class="warning">
     Здесь допускаются только тестовые или разрешённые к публичному размещению данные.
+    Рабочие внутренние данные и служебные материалы находятся во внутренней системе лаборатории.
   </p>
 
-  <h2>Карточки</h2>
+  <section class="card">
+    <h2>Публичные тестовые карточки</h2>
+    <ul>
+      <li><a href="TEST-001.html">TEST-001 — тестовый образец</a></li>
+    </ul>
+    <p class="muted">
+      Эти страницы предназначены для проверки QR-маркировки и внешнего отображения карточек.
+    </p>
+  </section>
 
-  <ul>
-    <li>
-      <a href="TEST-001.html">TEST-001 — тестовый образец</a>
-    </li>
-  </ul>
+  <section class="card">
+    <h2>О системе</h2>
+    <p>
+      Полная рабочая карточка образца, история обновлений, внутренние комментарии,
+      спектры и служебные документы ведутся отдельно во внутреннем контуре.
+    </p>
+  </section>
 </body>
 </html>
