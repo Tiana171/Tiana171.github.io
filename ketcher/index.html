@@ -66,4 +66,76 @@
   });
 })();
 </script>
+  <!-- Добавить ПОСЛЕ существующего REELUM bridge, перед </body> в ketcher/index.html. -->
+<script>
+(function () {
+  let rdkitPromise = null;
+  let busy = false;
+  function loadRDKit() {
+    if (rdkitPromise) return rdkitPromise;
+    const base = new URL('./rdkit/', window.location.href).href;
+    rdkitPromise = new Promise(function (resolve, reject) {
+      const script = document.createElement('script');
+      script.src = base + 'RDKit_minimal.js';
+      script.onerror = function () { reject(new Error('Не загружен rdkit/RDKit_minimal.js')); };
+      script.onload = function () {
+        if (typeof window.initRDKitModule !== 'function') {
+          reject(new Error('Не найдена initRDKitModule')); return;
+        }
+        window.initRDKitModule({locateFile: function (file) {return base + file;}})
+          .then(resolve).catch(reject);
+      };
+      document.head.appendChild(script);
+    }).catch(function (err) {rdkitPromise = null; throw err;});
+    return rdkitPromise;
+  }
+  window.addEventListener('message', async function (e) {
+    if (e.source !== window.parent || !e.data || e.data.type !== 'REELUM_FRAGMENT_SEARCH') return;
+    try {
+      if (!/\.googleusercontent\.com$/.test(new URL(e.origin).hostname)) return;
+    } catch (_) {return;}
+    const requestId = e.data.requestId;
+    const reply = function (message) {
+      e.source.postMessage(Object.assign({requestId: requestId}, message), e.origin);
+    };
+    if (busy) {
+      reply({type: 'REELUM_FRAGMENT_ERROR', error: 'Предыдущий поиск ещё выполняется.'}); return;
+    }
+    busy = true;
+    let query = null;
+    try {
+      if (!window.ketcher) throw new Error('Ketcher ещё не загрузился.');
+      const molfile = await window.ketcher.getMolfile();
+      const rdkit = await loadRDKit();
+      query = rdkit.get_mol(molfile);
+      if (!query || !query.is_valid() || query.get_num_atoms() === 0) {
+        throw new Error('Нарисуйте обычный молекулярный фрагмент с атомами и связями.');
+      }
+      const items = Array.isArray(e.data.items) ? e.data.items : [];
+      const sampleIds = []; const invalidIds = []; let checked = 0;
+      for (let i = 0; i < items.length; i++) {
+        let target = null;
+        try {
+          target = rdkit.get_mol(String(items[i].smiles || ''));
+          if (!target || !target.is_valid() || !target.get_num_atoms()) throw new Error('Invalid target');
+          const match = JSON.parse(target.get_substruct_match(query));
+          checked++;
+          if (Array.isArray(match.atoms) && match.atoms.length) sampleIds.push(items[i].sampleId);
+        } catch (_) {invalidIds.push(items[i].sampleId);}
+        finally {if (target) target.delete();}
+        if ((i + 1) % 20 === 0) {
+          reply({type: 'REELUM_FRAGMENT_PROGRESS', checked: checked});
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+      }
+      reply({type: 'REELUM_FRAGMENT_RESULT', sampleIds: sampleIds, invalidIds: invalidIds, checked: checked});
+    } catch (err) {
+      reply({type: 'REELUM_FRAGMENT_ERROR', error: err.message || String(err)});
+    } finally {
+      if (query) query.delete();
+      busy = false;
+    }
+  });
+})();
+</script>
 <body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>
